@@ -5,7 +5,7 @@ import axios from "axios";
 import type {
   Patient,
   CreatePatientPayload,
-  UpdatePatientPayload,
+  UpdatePatientDto,
   Consultation,
   CreateConsultationPayload,
 } from "@/types";
@@ -39,32 +39,34 @@ api.interceptors.response.use(
 // ── Patient endpoints ───────────────────────────────────────
 
 export async function getPatients(): Promise<Patient[]> {
-  const { data } = await api.get<Patient[]>("/patients");
+  const { data } = await api.get<Patient[]>("/Patient");
   return data;
 }
 
 export async function getPatient(id: number | string): Promise<Patient> {
-  const { data } = await api.get<Patient>(`/patients/${id}`);
-  return data;
+  const { data } = await api.get<Patient[]>("/Patient");
+  const patient = data.find(p => p.id === Number(id));
+  if (!patient) throw new Error("Patient not found");
+  return patient;
 }
 
 export async function createPatient(
   payload: CreatePatientPayload
 ): Promise<Patient> {
-  const { data } = await api.post<Patient>("/patients", payload);
+  const { data } = await api.post<Patient>("/Patient", payload);
   return data;
 }
 
 export async function updatePatient(
   id: number | string,
-  payload: UpdatePatientPayload
+  payload: UpdatePatientDto
 ): Promise<Patient> {
-  const { data } = await api.put<Patient>(`/patients/${id}`, payload);
+  const { data } = await api.put<Patient>(`/Patient/${id}`, payload);
   return data;
 }
 
 export async function deletePatient(id: number | string): Promise<void> {
-  await api.delete(`/patients/${id}`);
+  await api.delete(`/Patient/${id}`);
 }
 
 // ── Consultation endpoints ──────────────────────────────────

@@ -1,69 +1,74 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { getPatients } from "@/lib/api";
-import type { Patient } from "@/types";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api-client";
+import type { Patient, CreatePatientPayload, UpdatePatientDto } from "@/types";
+import toast from "react-hot-toast";
 
-const PAGE_SIZE = 8;
+const PATIENTS_QUERY_KEY = ["patients"];
 
+// API Service functions for Patients
+export const patientService = {
+  getAll: () => api.get<Patient[]>("/Patient"),
+  getById: async (id: number | string) => {
+    const patients = await api.get<Patient[]>("/Patient");
+    const patient = patients.find(p => p.id === Number(id));
+    if (!patient) throw new Error("Patient not found");
+    return patient;
+  },
+  create: (data: CreatePatientPayload) => api.post<Patient>("/Patient", data),
+  update: (id: number | string, data: UpdatePatientDto) => api.put<Patient>(`/Patient/${id}`, data),
+  delete: (id: number | string) => api.delete<void>(`/Patient/${id}`),
+};
+
+// Hooks
 export function usePatients() {
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  return useQuery({
+    queryKey: PATIENTS_QUERY_KEY,
+    queryFn: patientService.getAll,
+  });
+}
 
-  const fetchPatients = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getPatients();
-      setPatients(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch patients");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+export function usePatient(id: number | string) {
+  return useQuery({
+    queryKey: [...PATIENTS_QUERY_KEY, id],
+    queryFn: () => patientService.getById(id),
+    enabled: !!id,
+  });
+}
 
-  useEffect(() => {
-    fetchPatients();
-  }, [fetchPatients]);
-
-  // Client-side search filtering
-  const filtered = useMemo(() => {
-    if (!search.trim()) return patients;
-    const q = search.toLowerCase();
-    return patients.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.gender.toLowerCase().includes(q) ||
-        String(p.age).includes(q)
-    );
-  }, [patients, search]);
-
-  // Client-side pagination
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const paginated = filtered.slice(
-    (safePage - 1) * PAGE_SIZE,
-    safePage * PAGE_SIZE
-  );
-
-  return {
-    patients: paginated,
-    allPatients: patients,
-    totalCount: filtered.length,
-    loading,
-    error,
-    search,
-    setSearch: (val: string) => {
-      setSearch(val);
-      setPage(1);
+export function useCreatePatient() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: patientService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PATIENTS_QUERY_KEY });
     },
-    page: safePage,
-    setPage,
-    totalPages,
-    refetch: fetchPatients,
-  };
+  });
+}
+
+export function useUpdatePatient() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number | string; data: UpdatePatientDto }) =>
+      patientService.update(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: PATIENTS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: [...PATIENTS_QUERY_KEY, variables.id] });
+    },
+  });
+}
+
+export function useDeletePatient() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: patientService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PATIENTS_QUERY_KEY });
+      toast.success("Patient deleted successfully");
+    },
+    onError: () => {
+      toast.error("Failed to delete patient");
+    }
+  });
 }

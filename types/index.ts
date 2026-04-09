@@ -10,22 +10,34 @@ export interface Patient {
   id: number;
   name: string;
   age: number;
-  gender: Gender;
-  createdAt?: string;
+  gender: string;
+  email?: string;
+  disease?: string;
+  bloodGroup?: string;
+  phoneNumber?: string;
+  createdAt: string;
 }
 
-/** Payload for creating a new patient (id is server-generated) */
+/** Payload for creating a new patient */
 export interface CreatePatientPayload {
   name: string;
   age: number;
-  gender: Gender;
+  gender: string;
+  email?: string;
+  disease?: string;
+  bloodGroup?: string;
+  phoneNumber?: string;
 }
 
 /** Payload for updating an existing patient */
-export interface UpdatePatientPayload {
-  name: string;
-  age: number;
-  gender: Gender;
+export interface UpdatePatientDto {
+  name?: string;
+  age?: number;
+  gender?: string;
+  email?: string;
+  disease?: string;
+  bloodGroup?: string;
+  phoneNumber?: string;
 }
 
 /** Consultation entity */

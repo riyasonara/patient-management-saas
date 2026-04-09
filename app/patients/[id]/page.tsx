@@ -152,13 +152,34 @@ export default function PatientDetailPage({
                   {patient.name}
                 </h1>
                 <div className="flex flex-wrap items-center gap-4 mt-3">
-                  <Badge variant={genderBadgeVariant(patient.gender)}>
+                  <Badge variant={genderBadgeVariant(patient.gender as any)}>
                     {patient.gender}
                   </Badge>
+                  {patient.bloodGroup && (
+                    <Badge variant="outline" className="text-brand-600 border-brand-200 bg-brand-50">
+                      {patient.bloodGroup}
+                    </Badge>
+                  )}
                   <span className="text-sm font-medium text-text-secondary flex items-center gap-1.5 bg-surface/60 px-2 py-1 rounded-md border border-border/50">
                     <IconUser className="h-4 w-4 text-brand-500" />
                     {patient.age} years old
                   </span>
+                  {patient.disease && (
+                    <span className="text-sm font-medium text-danger flex items-center gap-1.5 bg-danger-muted px-2 py-1 rounded-md border border-danger/20">
+                      <IconStethoscope className="h-4 w-4 text-danger" />
+                      {patient.disease}
+                    </span>
+                  )}
+                  {patient.phoneNumber && (
+                    <span className="text-sm font-medium text-text-secondary flex items-center gap-1.5 bg-surface/60 px-2 py-1 rounded-md border border-border/50">
+                      Tel: {patient.phoneNumber}
+                    </span>
+                  )}
+                  {patient.email && (
+                    <span className="text-sm font-medium text-text-secondary flex items-center gap-1.5 bg-surface/60 px-2 py-1 rounded-md border border-border/50">
+                      Email: {patient.email}
+                    </span>
+                  )}
                   {patient.createdAt && (
                     <span className="text-sm font-medium text-text-secondary flex items-center gap-1.5 bg-surface/60 px-2 py-1 rounded-md border border-border/50">
                       <IconCalendarEvent className="h-4 w-4 text-brand-500" />
