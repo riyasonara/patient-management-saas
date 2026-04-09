@@ -17,7 +17,7 @@ import toast from "react-hot-toast";
 
 const patientSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100, "Too long"),
-  age: z.number().int().min(0, "Invalid age").max(150, "Invalid age"),
+  age: z.number({ message: "age is required" }).int().min(0, "Invalid age").max(150, "Invalid age"),
   gender: z.string().min(1, "Please select a gender"),
   email: z.string().min(1, "Email is required").email("Invalid email format"),
   disease: z.string().min(1, "Disease / Condition is required"),
