@@ -44,18 +44,29 @@ export interface UpdatePatientDto {
 export interface Consultation {
   id: number;
   patientId: number;
-  date: string;
+  diagnosis: string;
   notes: string;
-  doctorName: string;
+  prescription?: string;
+  consultationDate: string;
   createdAt?: string;
 }
 
 /** Payload for creating a new consultation */
 export interface CreateConsultationPayload {
   patientId: number;
-  date: string;
+  diagnosis: string;
   notes: string;
-  doctorName: string;
+  prescription?: string;
+  consultationDate: string;
+}
+
+/** Payload for updating an existing consultation */
+export interface UpdateConsultationDto {
+  patientId?: number;
+  diagnosis?: string;
+  notes?: string;
+  prescription?: string;
+  consultationDate?: string;
 }
 
 /** Generic API response wrapper */

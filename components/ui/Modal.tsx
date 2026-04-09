@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { IconX } from "@tabler/icons-react";
 
@@ -31,13 +32,14 @@ export default function Modal({
 
   if (!mounted || !isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-backdrop bg-foreground/30 backdrop-blur-sm">
+  return createPortal(
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6 animate-backdrop bg-foreground/30 backdrop-blur-sm">
       {/* Backdrop click to close */}
       <div
         className="absolute inset-0 cursor-pointer"
         onClick={onClose}
         aria-hidden
+        style={{ backgroundColor: "rgba(0, 0, 0, 0.4)" }}
       />
 
       {/* Modal content */}
@@ -58,6 +60,7 @@ export default function Modal({
         </div>
         <div>{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

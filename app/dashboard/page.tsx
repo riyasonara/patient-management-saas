@@ -13,7 +13,8 @@ import Card, { CardContent } from "@/components/ui/Card";
 import Badge, { genderBadgeVariant } from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { StatCardSkeleton, Skeleton } from "@/components/ui/Loader";
-import { getPatients, getConsultations } from "@/lib/api";
+import { getPatients } from "@/lib/api";
+import { consultationService } from "@/services/consultationService";
 import { formatDate } from "@/lib/utils";
 import type { Patient } from "@/types";
 
@@ -32,7 +33,7 @@ export default function DashboardPage() {
         let total = 0;
         const ids = pts.slice(0, 20).map((p) => p.id); // limit to 20
         const results = await Promise.allSettled(
-          ids.map((id) => getConsultations(id))
+          ids.map((id) => consultationService.getByPatientId(id))
         );
         for (const r of results) {
           if (r.status === "fulfilled") total += r.value.length;

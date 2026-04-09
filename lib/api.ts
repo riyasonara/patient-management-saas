@@ -69,22 +69,6 @@ export async function deletePatient(id: number | string): Promise<void> {
   await api.delete(`/Patient/${id}`);
 }
 
-// ── Consultation endpoints ──────────────────────────────────
 
-export async function getConsultations(
-  patientId: number | string
-): Promise<Consultation[]> {
-  const { data } = await api.get<Consultation[]>(
-    `/consultations/${patientId}`
-  );
-  return data;
-}
-
-export async function createConsultation(
-  payload: CreateConsultationPayload
-): Promise<Consultation> {
-  const { data } = await api.post<Consultation>("/consultations", payload);
-  return data;
-}
 
 export default api;

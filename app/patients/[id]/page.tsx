@@ -10,40 +10,19 @@ import {
   IconCalendarEvent,
   IconUser,
 } from "@tabler/icons-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import toast from "react-hot-toast";
 
 import { usePatient } from "@/hooks/usePatient";
-import { useConsultations } from "@/hooks/useConsultations";
+import { usePatientConsultations } from "@/hooks/useConsultations";
 import Card, { CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Badge, { genderBadgeVariant } from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
-import FormInput from "@/components/ui/FormInput";
-import FormTextarea from "@/components/ui/FormTextarea";
-import EmptyState from "@/components/ui/EmptyState";
 import { Skeleton, Spinner } from "@/components/ui/Loader";
-import {
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableHeaderCell,
-  TableCell,
-} from "@/components/ui/Table";
-import { createConsultation } from "@/lib/api";
-import { formatDate, toDateInputValue } from "@/lib/utils";
-
-// ── Consultation form schema ──────────────────────────────
-const consultationSchema = z.object({
-  date: z.string().min(1, "Date is required"),
-  notes: z.string().min(2, "Notes must be at least 2 characters"),
-  doctorName: z.string().min(2, "Doctor name is required"),
-});
-
-type ConsultationFormValues = z.infer<typeof consultationSchema>;
+import { formatDate } from "@/lib/utils";
+import ConsultationList from "@/components/consultations/ConsultationList";
+import ConsultationForm from "@/components/consultations/ConsultationForm";
+import type { Consultation } from "@/types";
 
 export default function PatientDetailPage({
   params,
@@ -51,46 +30,26 @@ export default function PatientDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const patientIdNum = Number(id);
   const { patient, loading: patientLoading, error: patientError } = usePatient(id);
   const {
-    consultations,
-    loading: consultationsLoading,
-    refetch: refetchConsultations,
-  } = useConsultations(id);
+    data: consultationsData,
+    isLoading: consultationsLoading,
+  } = usePatientConsultations(id);
+
+  const consultations = consultationsData || [];
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingConsultation, setEditingConsultation] = useState<Consultation | undefined>(undefined);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<ConsultationFormValues>({
-    resolver: zodResolver(consultationSchema),
-    defaultValues: {
-      date: toDateInputValue(new Date().toISOString()),
-      notes: "",
-      doctorName: "",
-    },
-  });
+  const handleEdit = (c: Consultation) => {
+    setEditingConsultation(c);
+    setModalOpen(true);
+  };
 
-  const onSubmitConsultation = async (data: ConsultationFormValues) => {
-    try {
-      await createConsultation({
-        patientId: Number(id),
-        date: data.date,
-        notes: data.notes,
-        doctorName: data.doctorName,
-      });
-      toast.success("Consultation added successfully!");
-      setModalOpen(false);
-      reset();
-      refetchConsultations();
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to add consultation"
-      );
-    }
+  const handleCloseForm = () => {
+    setModalOpen(false);
+    setEditingConsultation(undefined);
   };
 
   if (patientLoading) {
@@ -153,10 +112,10 @@ export default function PatientDetailPage({
                 </h1>
                 <div className="flex flex-wrap items-center gap-4 mt-3">
                   <Badge variant={genderBadgeVariant(patient.gender as any)}>
-                    {patient.gender}
-                  </Badge>
+                     {patient.gender}
+                   </Badge>
                   {patient.bloodGroup && (
-                    <Badge variant="outline" className="text-brand-600 border-brand-200 bg-brand-50">
+                    <Badge variant="default" className="text-brand-600 border-brand-200 bg-brand-50">
                       {patient.bloodGroup}
                     </Badge>
                   )}
@@ -202,7 +161,10 @@ export default function PatientDetailPage({
               <Button
                 variant="primary"
                 icon={<IconPlus className="h-4 w-4" stroke={2.5} />}
-                onClick={() => setModalOpen(true)}
+                onClick={() => {
+                  setEditingConsultation(undefined);
+                  setModalOpen(true);
+                }}
               >
                 New Record
               </Button>
@@ -212,7 +174,7 @@ export default function PatientDetailPage({
       </Card>
 
       {/* Consultation history */}
-      <Card className="border border-border/80 shadow-soft">
+      <Card className="border border-border/80 shadow-soft overflow-hidden">
         <CardHeader className="bg-surface">
           <CardTitle className="flex items-center gap-2">
              <IconStethoscope className="h-5 w-5 text-brand-500" />
@@ -222,107 +184,29 @@ export default function PatientDetailPage({
             {consultations.length} record{consultations.length !== 1 ? "s" : ""}
           </span>
         </CardHeader>
-        
-        <CardContent className="p-0">
+        <CardContent className="p-0 border-t border-border">
           {consultationsLoading ? (
-             <div className="flex justify-center py-12">
-                <Spinner />
-             </div>
-          ) : consultations.length === 0 ? (
-            <div className="p-8">
-              <EmptyState
-                title="No medical records found"
-                message="This patient does not have any recorded consultations yet."
-                icon={<IconStethoscope className="h-8 w-8 opacity-70" />}
-                action={
-                  <Button
-                    onClick={() => setModalOpen(true)}
-                    icon={<IconPlus className="h-4 w-4" />}
-                  >
-                    Add First Record
-                  </Button>
-                }
-              />
+            <div className="flex justify-center py-12">
+               <Spinner />
             </div>
           ) : (
-             <Table className="border-none shadow-none rounded-none rounded-b-2xl">
-                <TableHead>
-                   <TableRow>
-                      <TableHeaderCell>Date</TableHeaderCell>
-                      <TableHeaderCell>Attending Doctor</TableHeaderCell>
-                      <TableHeaderCell>Clinical Notes</TableHeaderCell>
-                   </TableRow>
-                </TableHead>
-                <TableBody>
-                   {consultations.map((c) => (
-                      <TableRow key={c.id}>
-                         <TableCell className="w-1/5">
-                            <span className="inline-flex items-center gap-1.5 font-medium text-text-secondary bg-surface-hover/50 px-2 py-1 rounded-md">
-                               <IconCalendarEvent className="h-4 w-4 text-text-muted" />
-                               {formatDate(c.date)}
-                            </span>
-                         </TableCell>
-                         <TableCell className="w-1/4 font-semibold text-text-primary">
-                            Dr. {c.doctorName.replace(/^Dr\.?\s*/i, "")}
-                         </TableCell>
-                         <TableCell>
-                            <p className="text-text-secondary leading-relaxed bg-surface/50 border border-border/40 p-3 rounded-xl shadow-inner text-sm">
-                              {c.notes}
-                            </p>
-                         </TableCell>
-                      </TableRow>
-                   ))}
-                </TableBody>
-             </Table>
+             <ConsultationList consultations={consultations} onEdit={handleEdit} />
           )}
         </CardContent>
       </Card>
 
-      {/* Add consultation modal */}
+      {/* Add / Edit consultation modal */}
       <Modal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title="Record New Consultation"
+        onClose={handleCloseForm}
+        title={editingConsultation ? "Edit Record" : "Record New Consultation"}
       >
-        <form
-          onSubmit={handleSubmit(onSubmitConsultation)}
-          className="space-y-5 py-2"
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-             <FormInput
-               label="Date"
-               type="date"
-               error={errors.date?.message}
-               registration={register("date")}
-             />
-             <FormInput
-               label="Attending Doctor"
-               placeholder="Dr. Name"
-               error={errors.doctorName?.message}
-               registration={register("doctorName")}
-             />
-          </div>
-          <FormTextarea
-            label="Clinical Notes"
-            placeholder="Detailed observations and prescriptions..."
-            error={errors.notes?.message}
-            registration={register("notes")}
-            className="min-h-[120px]"
-          />
-          <div className="flex items-center gap-3 pt-3 border-t border-border mt-4">
-            <Button type="submit" isLoading={isSubmitting} className="w-full sm:w-auto">
-              {isSubmitting ? "Saving record…" : "Save Record"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setModalOpen(false)}
-               className="w-full sm:w-auto"
-            >
-              Cancel
-            </Button>
-          </div>
-        </form>
+         <ConsultationForm
+           fixedPatientId={patientIdNum}
+           consultationToEdit={editingConsultation}
+           onSuccess={handleCloseForm}
+           onCancel={handleCloseForm}
+         />
       </Modal>
     </div>
   );
