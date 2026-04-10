@@ -17,10 +17,10 @@ import toast from "react-hot-toast";
 
 const patientSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100, "Too long"),
-  age: z.number().int().min(0, "Invalid age").max(150, "Invalid age"),
+  age: z.number({ message: "age is required" }).int().min(0, "Invalid age").max(150, "Invalid age"),
   gender: z.string().min(1, "Please select a gender"),
-  email: z.union([z.string().email("Invalid email format"), z.literal(""), z.undefined()]).optional(),
-  disease: z.string().optional(),
+  email: z.string().min(1, "Email is required").email("Invalid email format"),
+  disease: z.string().min(1, "Disease / Condition is required"),
   bloodGroup: z.string().optional(),
   phoneNumber: z.string().optional(),
 });
@@ -75,9 +75,9 @@ export default function CreatePatientPage() {
               <FormSelect label="Gender *" options={genderOptions} placeholder="Select gender" error={errors.gender?.message} registration={register("gender")} />
               <FormInput label="Blood Group" placeholder="e.g. O+" error={errors.bloodGroup?.message} registration={register("bloodGroup")} />
               <FormInput label="Phone Number" placeholder="e.g. 123-456-7890" error={errors.phoneNumber?.message} registration={register("phoneNumber")} />
-              <FormInput label="Email Address" type="email" placeholder="e.g. jane@example.com" error={errors.email?.message} registration={register("email")} />
+              <FormInput label="Email Address *" type="email" placeholder="e.g. jane@example.com" error={errors.email?.message} registration={register("email")} />
               <div className="sm:col-span-2">
-                <FormInput label="Disease / Condition" placeholder="e.g. Hypertension" error={errors.disease?.message} registration={register("disease")} />
+                <FormInput label="Disease / Condition *" placeholder="e.g. Hypertension" error={errors.disease?.message} registration={register("disease")} />
               </div>
             </div>
 
